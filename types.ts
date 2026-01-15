@@ -3,7 +3,8 @@ export interface AppConfig {
   textModel: string;
   imageModel: string;
   baseUrl?: string;
-  // 注意：API Key 由平台通过 process.env.API_KEY 提供，本应用通过 aistudio 接口引导用户选择
+  apiKey?: string;
+  // 支持直接配置API Key，优先级高于环境变量
 }
 
 export interface GeneratedSlide {

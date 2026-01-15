@@ -11,7 +11,7 @@ interface ConfigModalProps {
 
 const ConfigModal: React.FC<ConfigModalProps> = ({ config, setConfig, onClose }) => {
   const [localConfig, setLocalConfig] = useState<AppConfig>({ ...config });
-  const [useCustomText, setUseCustomText] = useState(!['gemini-3-flash-preview', 'gemini-3-pro-preview'].includes(config.textModel));
+  const [useCustomText, setUseCustomText] = useState(!['gemini-3-flash-preview', 'gemini-3-pro-preview', 'deepseek-chat', 'deepseek-coder'].includes(config.textModel));
   const [useCustomImage, setUseCustomImage] = useState(!['gemini-2.5-flash-image', 'gemini-3-pro-image-preview'].includes(config.imageModel));
 
   const handleSave = () => {
@@ -44,16 +44,29 @@ const ConfigModal: React.FC<ConfigModalProps> = ({ config, setConfig, onClose })
               <span>凭据管理</span>
             </div>
             <div className="bg-gray-50 rounded-2xl p-4 border border-gray-100 space-y-3">
-              <p className="text-xs text-gray-500 leading-relaxed">
-                为了安全起见，API Key 将通过平台加密通道管理。点击下方按钮选择您的付费项目 Key。
-              </p>
-              <button 
-                onClick={openKeySelector}
-                className="w-full flex items-center justify-center gap-2 py-3 bg-white border border-gray-200 rounded-xl text-sm font-bold text-gray-700 hover:bg-gray-100 active:scale-95 transition-all shadow-sm"
-              >
-                <Key className="w-4 h-4" />
-                配置/更换 API Key
-              </button>
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-gray-400 uppercase px-1">API Key (可选)</label>
+                <input 
+                  type="password"
+                  placeholder="直接输入 Gemini API Key"
+                  value={localConfig.apiKey || ''}
+                  onChange={(e) => setLocalConfig({ ...localConfig, apiKey: e.target.value })}
+                  className="w-full p-3.5 bg-white border border-gray-200 rounded-2xl text-sm focus:ring-2 focus:ring-red-100 outline-none transition-all placeholder-gray-300 text-gray-800"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-gray-400 uppercase px-1">平台 Key (可选)</label>
+                <p className="text-xs text-gray-500 leading-relaxed">
+                  通过平台加密通道管理 API Key。点击下方按钮选择您的付费项目 Key。
+                </p>
+                <button 
+                  onClick={openKeySelector}
+                  className="w-full flex items-center justify-center gap-2 py-3 bg-white border border-gray-200 rounded-xl text-sm font-bold text-gray-700 hover:bg-gray-100 active:scale-95 transition-all shadow-sm"
+                >
+                  <Key className="w-4 h-4" />
+                  配置/更换平台 Key
+                </button>
+              </div>
               <a 
                 href="https://ai.google.dev/gemini-api/docs/billing" 
                 target="_blank" 
@@ -107,7 +120,7 @@ const ConfigModal: React.FC<ConfigModalProps> = ({ config, setConfig, onClose })
                   type="text"
                   value={localConfig.textModel}
                   onChange={(e) => setLocalConfig({ ...localConfig, textModel: e.target.value })}
-                  placeholder="输入模型名称，如 gemini-3-pro-preview"
+                  placeholder="输入模型名称，如 gemini-3-pro-preview 或 deepseek-chat"
                   className="w-full p-3.5 bg-gray-50 border border-gray-200 rounded-2xl text-sm focus:ring-2 focus:ring-purple-100 outline-none text-gray-800"
                 />
               ) : (
@@ -118,6 +131,8 @@ const ConfigModal: React.FC<ConfigModalProps> = ({ config, setConfig, onClose })
                 >
                   <option value="gemini-3-flash-preview">Gemini 3 Flash (快)</option>
                   <option value="gemini-3-pro-preview">Gemini 3 Pro (强)</option>
+                  <option value="deepseek-chat">DeepSeek Chat</option>
+                  <option value="deepseek-coder">DeepSeek Coder</option>
                 </select>
               )}
             </div>

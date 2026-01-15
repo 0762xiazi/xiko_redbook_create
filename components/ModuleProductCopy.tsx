@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import { AppConfig, ProductCopyResult } from '../types';
 import { fileToBase64, copyToClipboard, downloadAsZip } from '../utils';
-import { generateProductCopy, generateAIBase64Image } from '../services/gemini';
+import { generateProductCopy, generateAIBase64Image } from '../services';
 
 interface ModuleProductCopyProps {
   config: AppConfig;
@@ -26,7 +26,7 @@ const ModuleProductCopy: React.FC<ModuleProductCopyProps> = ({ config }) => {
   const [selectedPreviewImage, setSelectedPreviewImage] = useState<string | null>(null);
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
+    const files: File[] = Array.from(e.target.files || []);
     const newImages = [...productImages];
     for (const file of files) {
       if (newImages.length >= 5) break;

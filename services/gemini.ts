@@ -4,7 +4,7 @@ import { AppConfig, GeneratedSlide, ProductCopyResult } from "../types";
 
 // 创建 GoogleGenAI 实例，优先使用环境变量中的 API_KEY，支持传入自定义 baseUrl
 export const getGeminiClient = (config: AppConfig) => {
-  const options: any = { apiKey: process.env.API_KEY };
+  const options: any = { apiKey: config.apiKey || process.env.API_KEY };
   if (config.baseUrl) {
     options.baseUrl = config.baseUrl;
   }
@@ -40,6 +40,8 @@ export const analyzeAndGenerateSlides = async (
       - Modern, clean, aesthetically pleasing.
       - Use bold headings, emojis, and clear call-to-actions.
       - Layout should be portrait (ideal for mobile).
+      - For text elements with background colors, use inline-flex with items-center and justify-center to ensure horizontal and vertical centering.
+      - Example for highlighted text: <span class="inline-flex items-center justify-center bg-red-500 text-white px-2 py-1 rounded">Important Text</span>
     `;
 
     const parts: any[] = [{ text: prompt }];

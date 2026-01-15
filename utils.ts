@@ -2,6 +2,7 @@
 declare const html2canvas: any;
 declare const JSZip: any;
 declare const saveAs: any;
+import { toPng } from 'html-to-image'
 
 export const fileToBase64 = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
@@ -12,14 +13,211 @@ export const fileToBase64 = (file: File): Promise<string> => {
   });
 };
 
+export const captureElementAsImage = async (element: HTMLElement, scale: number = 3): Promise<string> => {
+  // 使用固定的基础尺寸（3:4比例）
+  const baseWidth = 450;
+  const baseHeight = 600;
+  // 2. 定义你想要的“导出高清尺寸”（小红书尺寸）
+const targetWidth = 1242;
+const targetHeight = 1656;
+const ratio = targetWidth / baseWidth;
+  
+  // // 根据缩放比例计算高分辨率尺寸
+  // const width = baseWidth * scale;
+  // const height = baseHeight * scale;
+  
+  // // 设置元素的精确尺寸
+  const originalWidth = element.style.width;
+  const originalHeight = element.style.height;
+  // element.style.width = `${baseWidth}px`;
+  // element.style.height = `${baseHeight}px`;
+  element.style.visibility = 'visible'; // 确保元素可见
+  element.style.opacity = '1'; // 确保元素不透明
+  
+  try {
+    // 确保元素在截图前已经渲染完成
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
+    // 尝试使用html-to-image的toPng方法，提高分辨率
+    // 移除width和height参数，让html-to-image根据元素实际尺寸截图
+    const canvas = await toPng(element, { 
+      quality: 1.0, // 确保最高质量
+      skipAutoScale: false, // 启用自动缩放
+      skipFonts: false, // 保留字体渲染
+      pixelRatio: ratio, // 设置像素比例
+      cacheBust: true, // 添加随机参数到URL，避免缓存问题
+      backgroundColor: element.style.backgroundColor || '#ffffff', // 使用元素的背景色
+       width: baseWidth,
+    height: baseHeight,
+    // 【关键点2】输出宽高：强制最终生成的 Canvas 是高清尺寸
+    canvasWidth: targetWidth,
+    canvasHeight: targetHeight,
+      style: {
+        visibility: 'visible',
+        opacity: '1',
+        width: `${baseWidth}px`,
+        height: `${baseHeight}px`,
+        transform: 'scale(1)', 
+        transformOrigin: 'top left',
+      }
+    })
+    return canvas;
+  } catch (error) {
+    console.error('html-to-image failed, falling back to html2canvas:', error);
+    
+    // 回退到使用html2canvas，同样设置高分辨率
+    const clone = element.cloneNode(true) as HTMLElement;
+    
+    // 设置克隆元素的精确样式
+    clone.style.position = 'absolute';
+    clone.style.left = '-9999px';
+    clone.style.top = '-9999px';
+    clone.style.zIndex = '9999';
+    clone.style.width = `${baseWidth}px`;
+    clone.style.height = `${baseHeight}px`;
+    clone.style.overflow = 'hidden';
+    clone.style.backgroundColor = element.style.backgroundColor || '#ffffff';
+    
+    // 应用样式修复
+    const fixStylesForHtml2Canvas = (el: HTMLElement) => {
+      const itemsCenterElements = el.querySelectorAll('.items-center');
+      itemsCenterElements.forEach((element) => {
+        (element as HTMLElement).style.verticalAlign = 'middle';
+        (element as HTMLElement).style.position = 'relative';
+        (element as HTMLElement).style.top = '8px';
+      });
+    };
+    
+    fixStylesForHtml2Canvas(clone);
+    
+    // 添加到DOM
+    document.body.appendChild(clone);
+    
+    try {
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      const computedStyle = window.getComputedStyle(clone);
+      const bgColor = computedStyle.backgroundColor === 'rgba(0, 0, 0, 0)' ? '#ffffff' : computedStyle.backgroundColor;
+      
+      // 使用html2canvas并设置高缩放比例
+      const canvas = await html2canvas(clone, {
+        useCORS: true,
+        scale: scale, // 提高缩放比例，生成高分辨率图片
+        logging: false,
+        backgroundColor: bgColor,
+        width: baseWidth,
+        height: baseHeight,
+        windowWidth: baseWidth,
+        windowHeight: baseHeight,
+        allowTaint: true,
+        useForeignObject: true,
+        letterRendering: true,
+        shadowBlur: 0,
+        preserveDrawingBuffer: true
+      });
+      
+      return canvas.toDataURL('image/png');
+    } finally {
+      document.body.removeChild(clone);
+    }
+  } finally {
+    // 恢复元素的原始尺寸
+    element.style.width = originalWidth;
+    element.style.height = originalHeight;
+  }
+};
+
 export const captureElement = async (element: HTMLElement): Promise<string> => {
-  const canvas = await html2canvas(element, {
-    useCORS: true,
-    scale: 2,
-    logging: false,
-    backgroundColor: null,
-  });
-  return canvas.toDataURL('image/png');
+  // Create a clone of the element for capturing
+  const clone = element.cloneNode(true) as HTMLElement;
+  
+  // Get the original element's dimensions
+  const originalRect = element.getBoundingClientRect();
+  
+  // Set the clone to have exact 3:4 aspect ratio with good resolution
+  const targetWidth = 600; // 3:4 ratio, width 900px
+  const targetHeight = 800; // 3:4 ratio, height 1200px
+  const scale = targetWidth / originalRect.width;
+  
+  // Set clone styles for proper rendering
+  clone.style.position = 'absolute';
+  clone.style.left = '-9999px';
+  clone.style.top = '-9999px';
+  clone.style.zIndex = '9999';
+  clone.style.width = `${targetWidth}px`;
+  clone.style.height = `${targetHeight}px`;
+  clone.style.overflow = 'hidden';
+  
+  // Minimal fix for vertical centering in html2canvas
+  // Only applies necessary changes to avoid breaking existing layouts
+  const fixStylesForHtml2Canvas = (el: HTMLElement) => {
+      // 找到所有带有items-center类的元素
+      const itemsCenterElements = el.querySelectorAll('.items-center');
+      
+      // 为每个元素添加负margin-top来调整垂直位置
+      itemsCenterElements.forEach((element) => {
+        // (element as HTMLElement).style.marginTop = '-5px';
+        // (element as HTMLElement).style.lineHeight = '1'; 
+        // (element as HTMLElement).style.paddingTop = '-5px';
+        (element as HTMLElement).style.verticalAlign = 'middle';
+        (element as HTMLElement).style.position = 'relative';
+        (element as HTMLElement).style.top = '8px';
+      });
+    // Only fix specific elements that have vertical centering issues
+    // without modifying the entire layout structure
+  };
+  
+  // Apply style fixes to ensure proper vertical alignment
+  fixStylesForHtml2Canvas(clone);
+  
+  // Add the clone to the DOM
+  document.body.appendChild(clone);
+  
+  try {
+    // Ensure the clone has been rendered
+    await new Promise(resolve => setTimeout(resolve, 300));
+    
+    // Get the actual background color from the element, fallback to white
+    const computedStyle = window.getComputedStyle(clone);
+    const bgColor = computedStyle.backgroundColor === 'rgba(0, 0, 0, 0)' ? '#ffffff' : computedStyle.backgroundColor;
+    
+    // Capture the clone with html2canvas with optimal settings
+    const canvas = await html2canvas(clone, {
+      useCORS: true,
+      scale: 2, // High resolution
+      logging: false,
+      backgroundColor: bgColor,
+      width: targetWidth,
+      height: targetHeight,
+      windowWidth: targetWidth,
+      windowHeight: targetHeight,
+      x: 0,
+      y: 0,
+      // Add more options for better rendering
+      allowTaint: true,
+      useForeignObject: true,
+      // Preserve original font rendering
+      letterRendering: true,
+      // Avoid text shadow issues
+      shadowBlur: 0,
+      // Improve flexbox support
+      preserveDrawingBuffer: true,
+      // Ensure proper CSS property handling
+      ignoreElements: (element) => {
+        // Ignore elements that might interfere with rendering
+        return false;
+      }
+    });
+    
+    return canvas.toDataURL('image/png');
+  } catch (error) {
+    console.error('Image capture failed:', error);
+    // Fallback to a simple image if capture fails
+    return 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z/C/HgAGgwJ/lK3Q6wAAAABJRU5ErkJggg==';
+  } finally {
+    // Remove the clone from the DOM
+    document.body.removeChild(clone);
+  }
 };
 
 export const downloadAsZip = async (images: { name: string; data: string }[], zipName: string) => {
