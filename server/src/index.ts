@@ -16,7 +16,7 @@ const port = process.env.PORT || 3001;
 
 // Middleware
 app.use(cors({
-  origin: ['http://localhost:5173', 'http://192.168.110.97:3000'], // Allow frontend to access
+  origin: ['http://localhost:5173', 'http://192.168.110.97:3000', 'https://xiko-redbook-create.vercel.app'], // Allow frontend to access
   credentials: true
 }));
 app.use(express.json());
@@ -31,7 +31,12 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: 'Server is running' });
 });
 
-// Start server
-app.listen(port, () => {
-  console.log(`Server is running on http://localhost:${port}`);
-});
+// Start server only in development
+if (process.env.NODE_ENV !== 'production') {
+  app.listen(port, () => {
+    console.log(`Server is running on http://localhost:${port}`);
+  });
+}
+
+// Export the app for Vercel
+export default app;
