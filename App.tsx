@@ -76,7 +76,7 @@ const App: React.FC = () => {
     if (!token) return;
     
     try {
-      const response = await fetch('http://localhost:3001/api/api-keys/gemini', {
+      const response = await fetch('/api/api-keys/gemini', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -111,7 +111,7 @@ const App: React.FC = () => {
     if (!token) return;
     
     try {
-      const response = await fetch('http://localhost:3001/api/api-keys', {
+      const response = await fetch('/api/api-keys', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

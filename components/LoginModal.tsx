@@ -21,7 +21,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin }) => 
     setIsLoading(true);
 
     try {
-      const url = 'http://localhost:3001/api/auth/login';
+      const url = '/api/auth/login';
 
       const response = await fetch(url, {
         method: 'POST',

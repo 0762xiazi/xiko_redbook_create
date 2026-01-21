@@ -39,7 +39,7 @@ const ModuleWechatArticle: React.FC<ModuleWechatArticleProps> = ({ config, user,
         createdAt: new Date().toISOString()
       };
       
-      const response = await fetch('http://localhost:3001/api/generations', {
+      const response = await fetch('/api/generations', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
