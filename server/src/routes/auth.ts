@@ -94,20 +94,29 @@ router.post('/register', async (req, res) => {
 // User login
 router.post('/login', async (req, res) => {
   try {
+    console.time('Login request processing');
+    console.log('Login request received:', req.body);
+    
     const { email, password }: LoginRequest = req.body;
     
     if (!email || !password) {
+      console.log('Missing email or password');
       return res.status(400).json({ message: 'Email and password are required' });
     }
     
     // Get user from database
+    console.log('Querying user from database:', email);
+    console.time('Database query time');
     const { data: user, error: fetchError } = await supabase
       .from('users')
       .select('id, email, name, password')
       .eq('email', email)
       .single();
+    console.timeEnd('Database query time');
+    console.log('Database query result:', { data: user, error: fetchError });
     
     if (fetchError) {
+      console.log('Database query error:', fetchError);
       if (fetchError.code === 'PGRST116') {
         return res.status(401).json({ message: 'Invalid email or password' });
       }
@@ -115,24 +124,35 @@ router.post('/login', async (req, res) => {
     }
     
     // Verify password
+    console.log('Verifying password');
+    console.time('Password verification time');
     const passwordMatch = await bcrypt.compare(password, user.password);
+    console.timeEnd('Password verification time');
+    console.log('Password verification result:', passwordMatch);
     
     if (!passwordMatch) {
       return res.status(401).json({ message: 'Invalid email or password' });
     }
     
     // Generate JWT token
+    console.log('Generating JWT token');
+    console.time('JWT token generation time');
     const token = generateToken({ id: user.id, email: user.email });
+    console.timeEnd('JWT token generation time');
+    console.log('JWT token generated successfully');
     
     // Remove password from response
     const { password: _, ...userWithoutPassword } = user;
     
+    console.log('Login successful:', userWithoutPassword);
+    console.timeEnd('Login request processing');
     return res.status(200).json({
       user: userWithoutPassword,
       token
     });
   } catch (error) {
     console.error('Login error:', error);
+    console.timeEnd('Login request processing');
     return res.status(500).json({ message: 'Login failed', error: (error as Error).message });
   }
 });
