@@ -9,18 +9,14 @@
       }
     },
     {
-      "src": "server/package.json",
-      "use": "@vercel/node",
-      "config": {
-        "installCommand": "cd server && npm install",
-        "buildCommand": "cd server && npm run vercel-build"
-      }
+      "src": "api/index.js",
+      "use": "@vercel/node"
     }
   ],
   "routes": [
     {
       "src": "/api/(.*)",
-      "dest": "server/dist/index.js"
+      "dest": "api/index.js"
     },
     {
       "src": "/(.*)",
