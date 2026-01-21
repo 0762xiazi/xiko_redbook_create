@@ -1,6 +1,11 @@
 import React, { useState } from 'react';
 import { X } from 'lucide-react';
 
+// 简单的密码哈希函数，用于避免明文传输
+const hashPassword = (password: string): string => {
+  return btoa(encodeURIComponent(password));
+};
+
 interface LoginModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -30,7 +35,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin }) => 
         },
         body: JSON.stringify({
           email,
-          password,
+          password: hashPassword(password),
         }),
       });
 

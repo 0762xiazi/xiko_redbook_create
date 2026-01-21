@@ -78,6 +78,17 @@ export default async (req, res) => {
         return;
       }
       
+      // 解码前端发送的base64编码的密码
+      let decodedPassword;
+      try {
+        decodedPassword = decodeURIComponent(atob(password));
+      } catch (error) {
+        res.statusCode = 400;
+        res.setHeader('Content-Type', 'application/json');
+        res.end(JSON.stringify({ message: 'Invalid password format' }));
+        return;
+      }
+      
       // Get Supabase client
       const supabase = getSupabase();
       
@@ -109,7 +120,7 @@ export default async (req, res) => {
         // Verify password
         console.log('Verifying password');
         console.time('Password verification time');
-        const passwordMatch = await bcrypt.compare(password, user.password);
+        const passwordMatch = await bcrypt.compare(decodedPassword, user.password);
         console.timeEnd('Password verification time');
         console.log('Password verification result:', passwordMatch);
         
@@ -153,6 +164,17 @@ export default async (req, res) => {
         return;
       }
       
+      // 解码前端发送的base64编码的密码
+      let decodedPassword;
+      try {
+        decodedPassword = decodeURIComponent(atob(password));
+      } catch (error) {
+        res.statusCode = 400;
+        res.setHeader('Content-Type', 'application/json');
+        res.end(JSON.stringify({ message: 'Invalid password format' }));
+        return;
+      }
+      
       // Get Supabase client
       const supabase = getSupabase();
       
@@ -183,7 +205,7 @@ export default async (req, res) => {
         // Hash password
         console.log('Hashing password');
         console.time('Password hashing time');
-        const hashedPassword = await bcrypt.hash(password, 10);
+        const hashedPassword = await bcrypt.hash(decodedPassword, 10);
         console.timeEnd('Password hashing time');
         
         // Create new user

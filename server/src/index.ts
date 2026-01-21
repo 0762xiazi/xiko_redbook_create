@@ -12,7 +12,7 @@ import { generationRoutes } from './routes/generation';
 
 // Create Express app
 const app = express();
-const port = process.env.PORT || 3001;
+const port = process.env.PORT || 3002;
 
 // Middleware
 app.use(cors({

@@ -25,6 +25,16 @@ router.post('/register', async (req, res) => {
       return res.status(400).json({ message: 'Email and password are required' });
     }
     
+    // Decode password (base64 encoded from frontend)
+    let decodedPassword = password;
+    try {
+      decodedPassword = decodeURIComponent(atob(password));
+      console.log('Decoded password:', decodedPassword);
+    } catch (decodeError) {
+      console.error('Error decoding password:', decodeError);
+      // If decoding fails, use the original password
+    }
+    
     // Check if user already exists
     let existingUser = null;
     try {
@@ -51,7 +61,7 @@ router.post('/register', async (req, res) => {
     }
     
     // Hash password
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const hashedPassword = await bcrypt.hash(decodedPassword, 10);
     
     // Create new user
     const { data: newUser, error: createError } = await supabase
@@ -104,6 +114,16 @@ router.post('/login', async (req, res) => {
       return res.status(400).json({ message: 'Email and password are required' });
     }
     
+    // Decode password (base64 encoded from frontend)
+    let decodedPassword = password;
+    try {
+      decodedPassword = decodeURIComponent(atob(password));
+      console.log('Decoded password:', decodedPassword);
+    } catch (decodeError) {
+      console.error('Error decoding password:', decodeError);
+      // If decoding fails, use the original password
+    }
+    
     // Get user from database
     console.log('Querying user from database:', email);
     console.time('Database query time');
@@ -126,7 +146,7 @@ router.post('/login', async (req, res) => {
     // Verify password
     console.log('Verifying password');
     console.time('Password verification time');
-    const passwordMatch = await bcrypt.compare(password, user.password);
+    const passwordMatch = await bcrypt.compare(decodedPassword, user.password);
     console.timeEnd('Password verification time');
     console.log('Password verification result:', passwordMatch);
     
