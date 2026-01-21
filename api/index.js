@@ -1,5 +1,6 @@
 // Serverless Function entry point for Vercel
-const app = require('../server/dist/index.js').default;
-
-// Export the handler function for Vercel
-module.exports = app;
+// Import the server app using dynamic import to handle ES modules
+module.exports = async (req, res) => {
+  const { default: app } = await import('../server/dist/index.js');
+  return app(req, res);
+};
