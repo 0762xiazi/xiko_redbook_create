@@ -7,15 +7,23 @@ interface ConfigModalProps {
   config: AppConfig;
   setConfig: (config: AppConfig) => void;
   onClose: () => void;
+  user: any;
+  onSaveApiKey: (apiKey: string) => Promise<void>;
 }
 
-const ConfigModal: React.FC<ConfigModalProps> = ({ config, setConfig, onClose }) => {
+const ConfigModal: React.FC<ConfigModalProps> = ({ config, setConfig, onClose, user, onSaveApiKey }) => {
   const [localConfig, setLocalConfig] = useState<AppConfig>({ ...config });
   const [useCustomText, setUseCustomText] = useState(!['gemini-3-flash-preview', 'gemini-3-pro-preview', 'deepseek-chat', 'deepseek-coder'].includes(config.textModel));
   const [useCustomImage, setUseCustomImage] = useState(!['gemini-2.5-flash-image', 'gemini-3-pro-image-preview'].includes(config.imageModel));
 
-  const handleSave = () => {
+  const handleSave = async () => {
     setConfig(localConfig);
+    
+    // 如果用户已登录且API Key有变化，保存到后端
+    if (user && localConfig.apiKey) {
+      await onSaveApiKey(localConfig.apiKey);
+    }
+    
     onClose();
   };
 

@@ -14,32 +14,31 @@ export const fileToBase64 = (file: File): Promise<string> => {
 };
 
 export const captureElementAsImage = async (element: HTMLElement, scale: number = 3): Promise<string> => {
-  // 使用固定的基础尺寸（3:4比例）
-  const baseWidth = 450;
-  const baseHeight = 600;
-  // 2. 定义你想要的“导出高清尺寸”（小红书尺寸）
-const targetWidth = 1242;
-const targetHeight = 1656;
-const ratio = targetWidth / baseWidth;
+  // 定义基础尺寸（3:4比例，适合小红书）
+  const baseWidth = 600;
+  const baseHeight = 800;
+  // 定义你想要的“导出高清尺寸”（小红书尺寸）
+  const targetWidth = 1242;
+  const targetHeight = 1656;
+  const ratio = targetWidth / baseWidth;
   
-  // // 根据缩放比例计算高分辨率尺寸
-  // const width = baseWidth * scale;
-  // const height = baseHeight * scale;
-  
-  // // 设置元素的精确尺寸
+  // 保存元素的原始样式
   const originalWidth = element.style.width;
   const originalHeight = element.style.height;
-  // element.style.width = `${baseWidth}px`;
-  // element.style.height = `${baseHeight}px`;
-  element.style.visibility = 'visible'; // 确保元素可见
-  element.style.opacity = '1'; // 确保元素不透明
+  const originalOverflow = element.style.overflow;
+  const originalVisibility = element.style.visibility;
+  const originalOpacity = element.style.opacity;
+  
+  // 确保元素在截图时是可见的，并且内容不被裁剪
+  element.style.visibility = 'visible';
+  element.style.opacity = '1';
+  element.style.overflow = 'visible';
   
   try {
     // 确保元素在截图前已经渲染完成
-    await new Promise(resolve => setTimeout(resolve, 100));
+    await new Promise(resolve => setTimeout(resolve, 200));
     
     // 尝试使用html-to-image的toPng方法，提高分辨率
-    // 移除width和height参数，让html-to-image根据元素实际尺寸截图
     const canvas = await toPng(element, { 
       quality: 1.0, // 确保最高质量
       skipAutoScale: false, // 启用自动缩放
@@ -47,17 +46,17 @@ const ratio = targetWidth / baseWidth;
       pixelRatio: ratio, // 设置像素比例
       cacheBust: true, // 添加随机参数到URL，避免缓存问题
       backgroundColor: element.style.backgroundColor || '#ffffff', // 使用元素的背景色
-       width: baseWidth,
-    height: baseHeight,
-    // 【关键点2】输出宽高：强制最终生成的 Canvas 是高清尺寸
-    canvasWidth: targetWidth,
-    canvasHeight: targetHeight,
+      width: baseWidth, // 设置基础宽度
+      height: baseHeight, // 设置基础高度
+      // 只设置输出宽高，确保最终生成的 Canvas 是高清尺寸
+      canvasWidth: targetWidth,
+      canvasHeight: targetHeight,
+      // 确保内容不被裁剪
       style: {
         visibility: 'visible',
         opacity: '1',
-        width: `${baseWidth}px`,
-        height: `${baseHeight}px`,
-        transform: 'scale(1)', 
+        overflow: 'visible',
+        transform: 'scale(1)',
         transformOrigin: 'top left',
       }
     })
@@ -68,14 +67,14 @@ const ratio = targetWidth / baseWidth;
     // 回退到使用html2canvas，同样设置高分辨率
     const clone = element.cloneNode(true) as HTMLElement;
     
-    // 设置克隆元素的精确样式
+    // 设置克隆元素的样式
     clone.style.position = 'absolute';
     clone.style.left = '-9999px';
     clone.style.top = '-9999px';
     clone.style.zIndex = '9999';
     clone.style.width = `${baseWidth}px`;
     clone.style.height = `${baseHeight}px`;
-    clone.style.overflow = 'hidden';
+    clone.style.overflow = 'visible'; // 确保内容不被裁剪
     clone.style.backgroundColor = element.style.backgroundColor || '#ffffff';
     
     // 应用样式修复
@@ -94,7 +93,7 @@ const ratio = targetWidth / baseWidth;
     document.body.appendChild(clone);
     
     try {
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise(resolve => setTimeout(resolve, 150));
       
       const computedStyle = window.getComputedStyle(clone);
       const bgColor = computedStyle.backgroundColor === 'rgba(0, 0, 0, 0)' ? '#ffffff' : computedStyle.backgroundColor;
@@ -113,7 +112,9 @@ const ratio = targetWidth / baseWidth;
         useForeignObject: true,
         letterRendering: true,
         shadowBlur: 0,
-        preserveDrawingBuffer: true
+        preserveDrawingBuffer: true,
+        scrollX: 0,
+        scrollY: 0
       });
       
       return canvas.toDataURL('image/png');
@@ -121,9 +122,12 @@ const ratio = targetWidth / baseWidth;
       document.body.removeChild(clone);
     }
   } finally {
-    // 恢复元素的原始尺寸
+    // 恢复元素的原始样式
     element.style.width = originalWidth;
     element.style.height = originalHeight;
+    element.style.overflow = originalOverflow;
+    element.style.visibility = originalVisibility;
+    element.style.opacity = originalOpacity;
   }
 };
 

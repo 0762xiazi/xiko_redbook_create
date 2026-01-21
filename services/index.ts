@@ -1,4 +1,4 @@
-import { AppConfig, GeneratedSlide, ImageGenerationRequest, ProductCopyResult } from '../types';
+import { AppConfig, GeneratedSlide, ProductCopyResult } from '../types';
 import { analyzeAndGenerateSlides as geminiAnalyzeAndGenerateSlides, generateProductCopy as geminiGenerateProductCopy, generateAIBase64Image as geminiGenerateAIBase64Image } from './gemini';
 import { analyzeAndGenerateSlides as deepseekAnalyzeAndGenerateSlides, generateProductCopy as deepseekGenerateProductCopy, generateAIBase64Image as deepseekGenerateAIBase64Image } from './deepseek';
 
@@ -32,14 +32,14 @@ export const generateProductCopy = async (
 };
 
 export const generateAIBase64Image = async (
-  request: ImageGenerationRequest,
+  prompt: string,
   config: AppConfig
 ): Promise<string> => {
   // 根据imageModel判断使用哪个服务
   if (config.imageModel?.startsWith('deepseek-')) {
-    return await deepseekGenerateAIBase64Image(request, config);
+    return await deepseekGenerateAIBase64Image(prompt, config);
   } else {
     // 默认使用Gemini服务
-    return await geminiGenerateAIBase64Image(request, config);
+    return await geminiGenerateAIBase64Image(prompt, config);
   }
 };

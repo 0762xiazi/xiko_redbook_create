@@ -23,9 +23,10 @@ const STYLES: SlideStyle[] = [
 
 interface ModuleContentImageProps {
   config: AppConfig;
+  token: string | null;
 }
 
-const ModuleContentImage: React.FC<ModuleContentImageProps> = ({ config }) => {
+const ModuleContentImage: React.FC<ModuleContentImageProps> = ({ config, token }) => {
   const [settings, setSettings] = useState<EditorSettings>({
     style: 'shockwave',
     fontFamily: 'sans-serif',
@@ -38,7 +39,7 @@ const ModuleContentImage: React.FC<ModuleContentImageProps> = ({ config }) => {
 
   const [content, setContent] = useState<EditorContent>({
     mainTitle: '你以为是内耗，其实是身体在拉响警报',
-    dateStr: '',
+    dateStr: '2026/01',
     author: '我不是西口子',
     bodyText: '早上八点，你坐在工位上，对着电脑屏幕，大脑却一片空白。昨晚没睡好，今天要交的报告还差一大半，下午还有个跨部门会议。你感到一阵熟悉的疲惫和烦躁，但更让你不安的是，你发现自己无法集中精力。你开始责备自己：“为什么别人都能高效完成，就我这么容易分心？” “是不是我能力不行？” 这种自我怀疑像藤蔓一样缠绕上来，让你更加动弹不得。\n\n\n# 那不是“懒惰”或“无能”，是“认知过载”\n\n我们太习惯给这种状态贴上“内耗”的标签了。仿佛所有的不适、停滞和低效，都是因为我们“想太多”、“不自律”。但我想告诉你，很多时候，这种所谓的“内耗”，并非性格缺陷，而是一种信号。\n\n你的大脑和身体，正在用疲惫、拖延和注意力涣散，对你发出最直接的警告：**负荷已满，需要暂停。**\n\n这不是软弱，而是一种原始的、本能的自我保护机制。当外界的要求（工作 deadline、人际压力、自我期待）持续超过你当下的心理资源时，你的系统就会自动进入一种“节能模式”。它通过降低你的行动意愿和认知效率，强行让你慢下来，以避免更彻底的崩溃。\n\n\n# 把警报声，翻译成可理解的语言\n\n所以，下一次当你感觉自己又陷入“内耗”的泥潭时，不妨先停下自我批判。试着把内心的嘈杂，翻译成更具体的问题：\n\n*   “我现在的疲惫，是因为这项任务本身让我感到恐惧或毫无意义吗？”\n*   “我的注意力无法集中，是不是因为同时有太多事情在争夺我的精力？”\n*   “这种烦躁感，是来自某个具体的人，还是某种我不愿面对的局面？”\n\n这个过程，本身就是一种整理。它不是要你立刻解决问题，而是让你看清，警报到底因何而响。当你识别出那个真正的压力源——可能是某个不合理的 deadline，一段消耗型的关系，或是一个模糊到让你无从下手的任务——你的焦虑就会从一团模糊的乌云，变成一些可以具体审视的轮廓。\n\n\n# 不是停止思考，而是转换频道\n\n我们无法，也不必完全消除这种保护机制。它的存在是合理的。我们能做的，是学会与它共处，甚至借助它的信号。\n\n这意味着，当你感到“内耗”来袭时，最重要的动作可能不是“逼自己更努力”，而是“允许自己换一种方式存在”。\n\n如果大脑拒绝处理复杂的A任务，或许可以转而处理一些机械的、不费神的B任务，比如整理文件、回复简单邮件。这不是逃避，而是给高速运转的认知系统一个缓冲带。或者，干脆离开工位五分钟，去接杯水，看看窗外。让大脑从“问题解决”模式，切换到简单的“感官接收”模式。\n\n这些微小的切换，是在告诉你的保护机制：“我接收到警报了，我正在调整，请给我一点时间。”\n\n\n# 与你的警报系统和平共处\n\n成长不是一场对自己无限苛责的战争。真正的韧性，来源于倾听并尊重自己内在的节律。那个让你感到“内耗”的部分，或许正是你最忠诚的守卫者，它笨拙地、用让你不适的方式，提醒你界限的存在。\n\n所以，今天若你又感到了那种熟悉的停滞与自我怀疑，请先别急着否定自己。你可以轻轻地对自己说：\n\n“好的，我知道了。你现在很累，需要慢一点。我们来看看，到底发生了什么。”\n\n这不是妥协，这是一种更深刻的清醒。当你学会解读身体的警报，而不是与它为敌，你便获得了一种更可持续的力量。那不是在压力下依然光鲜亮丽的力量，而是在觉察中，稳稳接住自己的能力。',
   });
@@ -46,8 +47,8 @@ const ModuleContentImage: React.FC<ModuleContentImageProps> = ({ config }) => {
   const [bgImage, setBgImage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [slides, setSlides] = useState<GeneratedSlide[]>([]);
-  const [downloading, setDownloading] = useState(false);
   const [previewIdx, setPreviewIdx] = useState<number | null>(null);
+  const [isDownloading, setIsDownloading] = useState<boolean>(false);
   const slideRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -63,14 +64,60 @@ const ModuleContentImage: React.FC<ModuleContentImageProps> = ({ config }) => {
     return html;
   };
 
+  // 保存生成结果到后端
+  const saveGenerationResult = async (slides: GeneratedSlide[]) => {
+    if (!token) return;
+    
+    try {
+      const generationData = {
+        type: 'content-image',
+        content: JSON.stringify({
+          title: content.mainTitle,
+          slides: slides,
+          content: content,
+          settings: settings,
+          bgImage: bgImage
+        }),
+        createdAt: new Date().toISOString()
+      };
+      
+      const response = await fetch('http://localhost:3001/api/generations', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(generationData)
+      });
+      
+      if (!response.ok) {
+        throw new Error('保存生成结果失败');
+      }
+      
+      console.log('生成结果已保存到后端');
+    } catch (error) {
+      console.error('保存生成结果失败:', error);
+      // 保存失败不影响用户体验，仅记录日志
+    }
+  };
+
   const handleGenerate = async () => {
     setIsLoading(true);
     try {
-      const fullText = `Title: ${content.mainTitle}\nContext: ${content.dateStr}\nAuthor: ${content.author}\nBody: ${content.bodyText}\nStyle: ${settings.style}`;
+      const fullText = `Title: ${content.mainTitle}
+Context: ${content.dateStr}
+Author: ${content.author}
+Body: ${content.bodyText}
+Style: ${settings.style}`;
       const result = await analyzeAndGenerateSlides(bgImage, fullText, config);
       
       // Set the slides directly without heavy processing to preserve original styles
       setSlides(result);
+      
+      // 保存生成结果到后端
+      if (token) {
+        await saveGenerationResult(result);
+      }
     } catch (error) {
       console.error(error);
       alert('生成失败');
@@ -169,7 +216,7 @@ const ModuleContentImage: React.FC<ModuleContentImageProps> = ({ config }) => {
   };
 
   return (
-    <div className="space-y-6 pb-20">
+    <div className="space-y-6 pb-20 min-h-[800px]">
       {/* Style Selection */}
       <section className="space-y-3">
         <h3 className="text-sm font-bold text-gray-500 flex items-center gap-2">
@@ -424,12 +471,48 @@ const ModuleContentImage: React.FC<ModuleContentImageProps> = ({ config }) => {
       {/* Full Screen Slide Preview Modal */}
       {previewIdx !== null && (
         <div className="fixed inset-0 z-[60] bg-black/90 flex items-center justify-center p-4" onClick={() => setPreviewIdx(null)}>
-          <button 
-            className="absolute top-6 right-6 p-2 bg-white/10 hover:bg-white/20 text-white rounded-full transition-colors z-[70]"
-            onClick={(e) => { e.stopPropagation(); setPreviewIdx(null); }}
-          >
-            <X className="w-6 h-6" />
-          </button>
+          <div className="absolute top-6 right-6 flex gap-2 z-[70]">
+            <button 
+              className="p-2 bg-white/10 hover:bg-white/20 text-white rounded-full transition-colors"
+              onClick={(e) => { e.stopPropagation(); setPreviewIdx(null); }}
+            >
+              <X className="w-6 h-6" />
+            </button>
+            <button 
+              className="p-2 bg-white/10 hover:bg-white/20 text-white rounded-full transition-colors"
+              onClick={async (e) => {
+                e.stopPropagation();
+                const slideContainer = document.querySelector('.scale-animation');
+                if (slideContainer) {
+                  try {
+                    setIsDownloading(true);
+                    // 使用captureElementAsImage函数捕获整个幻灯片容器
+                    // 这个函数已经使用固定基础尺寸（600×800px），适合小红书3:4比例
+                    const imageData = await captureElementAsImage(slideContainer as HTMLElement);
+                    const link = document.createElement('a');
+                    link.download = `slide-${previewIdx + 1}.png`;
+                    link.href = imageData;
+                    link.click();
+                  } catch (error) {
+                    console.error('Failed to download slide:', error);
+                  } finally {
+                    setIsDownloading(false);
+                  }
+                }
+              }}
+              disabled={isDownloading}
+            >
+              {isDownloading ? (
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 animate-spin" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+              ) : (
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                </svg>
+              )}
+            </button>
+          </div>
           
           <div 
             className="w-full max-w-[600px] aspect-[3/4] bg-white rounded-2xl shadow-2xl overflow-hidden relative scale-animation"
@@ -447,7 +530,7 @@ const ModuleContentImage: React.FC<ModuleContentImageProps> = ({ config }) => {
               </div>
             )}
             <div 
-              className="w-full h-full p-10 flex flex-col justify-center items-center text-center overflow-hidden relative z-10"
+              className="w-full h-full flex flex-col justify-center items-center text-center overflow-hidden relative z-10 slide-content"
               style={{ 
                 color: settings.textColor,
                 fontFamily: settings.fontFamily

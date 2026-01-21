@@ -11,9 +11,11 @@ import { generateProductCopy, generateAIBase64Image } from '../services';
 
 interface ModuleProductCopyProps {
   config: AppConfig;
+  user: any;
+  token: string | null;
 }
 
-const ModuleProductCopy: React.FC<ModuleProductCopyProps> = ({ config }) => {
+const ModuleProductCopy: React.FC<ModuleProductCopyProps> = ({ config, user, token }) => {
   const [productInfo, setProductInfo] = useState('可乐\n(英文: Cola)，是指有甜味、含咖啡因但不含乙醇的碳酸饮料。味包括有香草、肉桂、柠檬香味等。');
   const [productImages, setProductImages] = useState<string[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -36,6 +38,43 @@ const ModuleProductCopy: React.FC<ModuleProductCopyProps> = ({ config }) => {
     setProductImages(newImages);
   };
 
+  // 保存生成结果到后端
+  const saveGenerationResult = async (copyResult: ProductCopyResult, aiImages: string[]) => {
+    if (!token) return;
+    
+    try {
+      const generationData = {
+        title: '产品种草文案',
+        type: 'product-copy',
+        data: {
+          productInfo: productInfo,
+          productImages: productImages,
+          copyResult: copyResult,
+          aiImages: aiImages
+        },
+        createdAt: new Date().toISOString()
+      };
+      
+      const response = await fetch('http://localhost:3001/api/generations', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(generationData)
+      });
+      
+      if (!response.ok) {
+        throw new Error('保存生成结果失败');
+      }
+      
+      console.log('生成结果已保存到后端');
+    } catch (error) {
+      console.error('保存生成结果失败:', error);
+      // 保存失败不影响用户体验，仅记录日志
+    }
+  };
+
   const handleGenerate = async () => {
     if (!productInfo.trim()) return;
     setIsGenerating(true);
@@ -53,6 +92,11 @@ const ModuleProductCopy: React.FC<ModuleProductCopyProps> = ({ config }) => {
         if (img) newAiImages.push(img);
       }
       setAiImages(newAiImages);
+      
+      // 保存生成结果到后端
+      if (token) {
+        await saveGenerationResult(copyResult, newAiImages);
+      }
     } catch (error) {
       console.error(error);
       alert('生成失败');

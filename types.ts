@@ -4,6 +4,7 @@ export interface AppConfig {
   imageModel: string;
   baseUrl?: string;
   apiKey?: string;
+  difyApiKey?: string;
   // 支持直接配置API Key，优先级高于环境变量
 }
 
@@ -47,7 +48,16 @@ export interface ProductCopyResult {
   suggestedImages: string[];
 }
 
+// 微信公众号推文结果接口
+export interface WechatArticleResult {
+  title: string;
+  coverImage: string;
+  htmlContent: string;
+  tags: string[];
+}
+
 export enum ActiveModule {
   CONTENT_IMAGE = 'CONTENT_IMAGE',
-  PRODUCT_COPY = 'PRODUCT_COPY'
+  PRODUCT_COPY = 'PRODUCT_COPY',
+  WECHAT_ARTICLE = 'WECHAT_ARTICLE' // 新增微信公众号推文模块
 }
