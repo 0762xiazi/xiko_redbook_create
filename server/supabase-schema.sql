@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXISTS user_api_keys (
   user_id UUID REFERENCES users(id) ON DELETE CASCADE,
   service VARCHAR(50) NOT NULL,
   api_key VARCHAR(255) NOT NULL,
-  df_api_key VARCHAR(255) NOT NULL,
+  df_api_key VARCHAR(255),
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   UNIQUE(user_id, service)

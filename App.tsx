@@ -119,7 +119,7 @@ const App: React.FC = () => {
         },
         body: JSON.stringify({
           service: 'gemini',
-          apiKey: apiKey
+          api_key: apiKey
         })
       });
       

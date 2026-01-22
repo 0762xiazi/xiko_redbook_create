@@ -95,6 +95,7 @@ router.post('/', authMiddleware, async (req, res) => {
         .from('user_api_keys')
         .update({
           api_key,
+          df_api_key: '', // Provide default value for df_api_key
           updated_at: new Date().toISOString()
         })
         .eq('id', existingKey.id)
@@ -108,6 +109,7 @@ router.post('/', authMiddleware, async (req, res) => {
           user_id: req.user.id,
           service,
           api_key,
+          df_api_key: '', // Provide default value for df_api_key
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         })

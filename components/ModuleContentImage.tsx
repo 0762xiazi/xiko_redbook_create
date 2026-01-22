@@ -49,6 +49,7 @@ const ModuleContentImage: React.FC<ModuleContentImageProps> = ({ config, token }
   const [slides, setSlides] = useState<GeneratedSlide[]>([]);
   const [previewIdx, setPreviewIdx] = useState<number | null>(null);
   const [isDownloading, setIsDownloading] = useState<boolean>(false);
+  const [downloading, setDownloading] = useState<boolean>(false);
   const slideRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
