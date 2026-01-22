@@ -250,13 +250,170 @@ export default async (req, res) => {
         res.setHeader('Content-Type', 'application/json');
         res.end(JSON.stringify({ message: 'Registration failed', error: error.message }));
       }
+    } else if (req.url === '/api/api-keys' || req.url.startsWith('/api/api-keys/')) {
+      // Handle API keys requests directly
+      console.log('Handling API keys request:', req.method, req.url);
+      
+      // Get Supabase client
+      const supabase = getSupabase();
+      
+      // Verify JWT token
+      const authHeader = req.headers.authorization;
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        res.statusCode = 401;
+        res.setHeader('Content-Type', 'application/json');
+        res.end(JSON.stringify({ message: 'User not authenticated' }));
+        return;
+      }
+      
+      const token = authHeader.split(' ')[1];
+      let decodedToken;
+      
+      try {
+        decodedToken = jwt.verify(token, process.env.JWT_SECRET || 'default-secret-key');
+      } catch (error) {
+        res.statusCode = 401;
+        res.setHeader('Content-Type', 'application/json');
+        res.end(JSON.stringify({ message: 'Invalid or expired token' }));
+        return;
+      }
+      
+      const userId = decodedToken.id;
+      
+      // Handle GET requests
+      if (req.method === 'GET') {
+        // Get specific service API key
+        if (req.url.includes('/api/api-keys/')) {
+          const service = req.url.split('/').pop();
+          
+          try {
+            const { data: apiKey, error } = await supabase
+              .from('user_api_keys')
+              .select('id, service, api_key')
+              .eq('user_id', userId)
+              .eq('service', service)
+              .single();
+            
+            if (error) {
+              if (error.code === 'PGRST116') {
+                res.statusCode = 404;
+                res.setHeader('Content-Type', 'application/json');
+                res.end(JSON.stringify({ message: `API key for ${service} not found` }));
+                return;
+              }
+              throw error;
+            }
+            
+            res.statusCode = 200;
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify({ apiKey }));
+          } catch (error) {
+            console.error('Get API key error:', error);
+            res.statusCode = 500;
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify({ message: 'Failed to get API key', error: error.message }));
+          }
+        } else {
+          // Get all API keys
+          try {
+            const { data: apiKeys, error } = await supabase
+              .from('user_api_keys')
+              .select('id, service, api_key')
+              .eq('user_id', userId);
+            
+            if (error) {
+              throw error;
+            }
+            
+            res.statusCode = 200;
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify({ apiKeys }));
+          } catch (error) {
+            console.error('Get API keys error:', error);
+            res.statusCode = 500;
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify({ message: 'Failed to get API keys', error: error.message }));
+          }
+        }
+      } 
+      // Handle POST requests
+      else if (req.method === 'POST') {
+        const { service, api_key } = body;
+        
+        if (!service || !api_key) {
+          res.statusCode = 400;
+          res.setHeader('Content-Type', 'application/json');
+          res.end(JSON.stringify({ message: 'Service and API key are required' }));
+          return;
+        }
+        
+        try {
+          // Check if API key already exists for this service
+          const { data: existingKey, error: checkError } = await supabase
+            .from('user_api_keys')
+            .select('id')
+            .eq('user_id', userId)
+            .eq('service', service)
+            .single();
+          
+          let result;
+          
+          if (existingKey) {
+            // Update existing API key
+            result = await supabase
+              .from('user_api_keys')
+              .update({
+                api_key,
+                df_api_key: '', // Provide default value for df_api_key
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', existingKey.id)
+              .select('id, service, api_key')
+              .single();
+          } else {
+            // Create new API key
+            result = await supabase
+              .from('user_api_keys')
+              .insert({
+                user_id: userId,
+                service,
+                api_key,
+                df_api_key: '', // Provide default value for df_api_key
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+              })
+              .select('id, service, api_key')
+              .single();
+          }
+          
+          if (result.error) {
+            throw result.error;
+          }
+          
+          res.statusCode = 200;
+          res.setHeader('Content-Type', 'application/json');
+          res.end(JSON.stringify({ apiKey: result.data }));
+        } catch (error) {
+          console.error('Save API key error:', error);
+          res.statusCode = 500;
+          res.setHeader('Content-Type', 'application/json');
+          res.end(JSON.stringify({ message: 'Failed to save API key', error: error.message }));
+        }
+      }
     } else {
       // Handle other requests by loading Express app
       console.log('Loading Express app for non-auth request');
-      const { createServer } = await import('http');
-      const { default: app } = await import('../server/dist/index.js');
-      const server = createServer(app);
-      server.emit('request', req, res);
+      try {
+        const { createServer } = await import('http');
+        const { default: app } = await import('../server/dist/index.js');
+        const server = createServer(app);
+        server.emit('request', req, res);
+      } catch (error) {
+        console.error('Error loading Express app:', error);
+        res.statusCode = 500;
+        res.setHeader('Content-Type', 'application/json');
+        res.end(JSON.stringify({ error: 'Internal Server Error', details: error.message }));
+      }
     }
   } catch (error) {
     console.error('Error handling request:', error);
