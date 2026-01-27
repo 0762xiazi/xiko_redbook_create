@@ -2,7 +2,6 @@ import express from 'express';
 import bcrypt from 'bcryptjs';
 import { supabase } from '../utils/supabase';
 import { generateToken } from '../utils/jwt';
-
 const router = express.Router();
 
 interface RegisterRequest {

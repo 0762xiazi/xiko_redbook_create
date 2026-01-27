@@ -112,3 +112,47 @@ export const generateAIBase64Image = async (prompt: string, config: AppConfig): 
     return handleApiError(error);
   }
 };
+
+export const generateArticle = async (
+  title: string,
+  targetAudience: string,
+  config: AppConfig
+): Promise<string> => {
+  try {
+    const client = getDeepSeekClient(config);
+    const prompt = `
+      Generate a comprehensive, engaging article based on the following title and target audience:
+      
+      Title: ${title}
+      Target Audience: ${targetAudience}
+      
+      The article should:
+      1. Be well-structured with clear headings and subheadings
+      2. Be engaging and relevant to the target audience
+      3. Include practical insights and actionable advice
+      4. Have a natural, conversational tone
+      5. Be comprehensive enough to provide real value
+      6. Use appropriate formatting with headings (#, ##, etc.)
+      7. Include emojis where appropriate to enhance readability
+      
+      The response should be the full article content as a single string, without any JSON formatting.
+    `;
+
+    const response = await client.chat.completions.create({
+      model: config.textModel,
+      messages: [
+        { role: "system", content: "You are a professional content writer specializing in creating engaging articles for various audiences." },
+        { role: "user", content: prompt }
+      ]
+    });
+
+    const content = response.choices[0].message.content;
+    if (!content) {
+      throw new Error("Empty response from DeepSeek API");
+    }
+
+    return content;
+  } catch (error) {
+    return handleApiError(error);
+  }
+};

@@ -59,5 +59,6 @@ export interface WechatArticleResult {
 export enum ActiveModule {
   CONTENT_IMAGE = 'CONTENT_IMAGE',
   PRODUCT_COPY = 'PRODUCT_COPY',
-  WECHAT_ARTICLE = 'WECHAT_ARTICLE' // 新增微信公众号推文模块
+  WECHAT_ARTICLE = 'WECHAT_ARTICLE', // 新增微信公众号推文模块
+  ARTICLE_GENERATOR = 'ARTICLE_GENERATOR' // 新增文章生成模块
 }

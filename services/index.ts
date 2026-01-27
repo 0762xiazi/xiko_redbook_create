@@ -43,3 +43,21 @@ export const generateAIBase64Image = async (
     return await geminiGenerateAIBase64Image(prompt, config);
   }
 };
+
+export const generateArticle = async (
+  title: string,
+  targetAudience: string,
+  config: AppConfig
+): Promise<string> => {
+  // 导入对应的服务函数
+  const { generateArticle: geminiGenerateArticle } = await import('./gemini');
+  const { generateArticle: deepseekGenerateArticle } = await import('./deepseek');
+  
+  // 根据textModel判断使用哪个服务
+  if (config.textModel?.startsWith('deepseek-')) {
+    return await deepseekGenerateArticle(title, targetAudience, config);
+  } else {
+    // 默认使用Gemini服务
+    return await geminiGenerateArticle(title, targetAudience, config);
+  }
+};

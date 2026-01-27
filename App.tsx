@@ -6,8 +6,9 @@ import LoginModal from './components/LoginModal';
 import ModuleContentImage from './components/ModuleContentImage';
 import ModuleProductCopy from './components/ModuleProductCopy';
 import ModuleWechatArticle from './components/ModuleWechatArticle'; // 导入微信公众号推文组件
+import ModuleArticleGenerator from './components/ModuleArticleGenerator'; // 导入文章生成模块
 import { ActiveModule, AppConfig } from './types';
-import { Image as ImageIcon, MessageSquare, FileText } from 'lucide-react'; // 导入文件文本图标
+import { Image as ImageIcon, MessageSquare, FileText, FilePlus } from 'lucide-react'; // 导入文件文本图标
 
 const STORAGE_KEY = 'xhs_creator_config_v2';
 const AUTH_KEY = 'xhs_creator_auth';
@@ -24,6 +25,7 @@ const App: React.FC = () => {
   const [showLogin, setShowLogin] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
+  const [generatedContent, setGeneratedContent] = useState({ title: '', content: '' });
   
   // 从本地缓存加载配置
   const [config, setConfig] = useState<AppConfig>(() => {
@@ -132,6 +134,12 @@ const App: React.FC = () => {
     }
   };
 
+  // 处理文章生成完成，跳转到内容生成模块并填充内容
+  const handleArticleGenerateComplete = (title: string, content: string) => {
+    setGeneratedContent({ title, content });
+    setActiveTab(ActiveModule.CONTENT_IMAGE);
+  };
+
   return (
     <div className="min-h-[800px] pb-24 bg-[#f9f9f9]">
       <Header 
@@ -146,7 +154,13 @@ const App: React.FC = () => {
           <>
             {/* 内容生成模块 */}
             <div hidden={activeTab !== ActiveModule.CONTENT_IMAGE}>
-              <ModuleContentImage config={config} user={user} token={token} />
+              <ModuleContentImage 
+                config={config} 
+                user={user} 
+                token={token} 
+                generatedTitle={generatedContent.title} 
+                generatedContent={generatedContent.content} 
+              />
             </div>
             
             {/* 种草助手模块 */}
@@ -157,6 +171,16 @@ const App: React.FC = () => {
             {/* 微信公众号推文模块 */}
             <div hidden={activeTab !== ActiveModule.WECHAT_ARTICLE}>
               <ModuleWechatArticle config={config} user={user} token={token} />
+            </div>
+            
+            {/* 文章生成模块 */}
+            <div hidden={activeTab !== ActiveModule.ARTICLE_GENERATOR}>
+              <ModuleArticleGenerator 
+                config={config} 
+                user={user} 
+                token={token} 
+                onGenerateComplete={handleArticleGenerateComplete} 
+              />
             </div>
           </>
         ) : (
@@ -207,6 +231,18 @@ const App: React.FC = () => {
         >
           <FileText className={`w-6 h-6 ${activeTab === ActiveModule.WECHAT_ARTICLE ? 'fill-current' : ''}`} />
           <span className="text-[10px] font-bold">公众号推文</span>
+        </button>
+        
+        <div className="w-px h-6 bg-gray-100" />
+        
+        <button 
+          onClick={() => setActiveTab(ActiveModule.ARTICLE_GENERATOR)}
+          className={`flex flex-col items-center gap-1.5 transition-all ${
+            activeTab === ActiveModule.ARTICLE_GENERATOR ? 'xhs-red scale-110' : 'text-gray-400'
+          }`}
+        >
+          <FilePlus className={`w-6 h-6 ${activeTab === ActiveModule.ARTICLE_GENERATOR ? 'fill-current' : ''}`} />
+          <span className="text-[10px] font-bold">文章生成</span>
         </button>
       </nav>
 

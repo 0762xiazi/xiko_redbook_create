@@ -39,6 +39,9 @@ function getSupabase() {
 function generateToken(payload) {
   const secret = process.env.JWT_SECRET || 'default-secret-key';
   const expiration = process.env.JWT_EXPIRATION || '10800s';
+   if (!secret) {
+    throw new Error('JWT_SECRET environment variable is required');
+  }
   return jwt.sign(payload, secret, { expiresIn: expiration });
 }
 
