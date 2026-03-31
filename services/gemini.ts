@@ -27,15 +27,9 @@ export const analyzeAndGenerateSlides = async (
 ): Promise<GeneratedSlide[]> => {
   try {
     const ai = getGeminiClient(config);
-    const prompt = `
-      Analyze the provided reference image (if any) for style, layout, typography, and color palette. 
-      Then, create a series of 3-5 high-quality Xiaohongshu-style content slides based on this text: "${text}".
-      
-      The response MUST be a JSON array of objects. Each object represents a slide and has:
-      - title: A short description of the slide.
-      - html: The HTML structure of the slide (use inline Tailwind classes where possible or simple divs).
-      - css: Any extra CSS needed (wrap it in a single string).
-      
+    
+    // 解析文本，提取风格信息
+    let styleGuide = `
       Style Guide:
       - Modern, clean, aesthetically pleasing.
       - Use bold headings, emojis, and clear call-to-actions.
@@ -44,6 +38,89 @@ export const analyzeAndGenerateSlides = async (
       - If min-height is used, it should be set to 800px to ensure sufficient vertical space.
       - For text elements with background colors, use inline-flex with items-center and justify-center to ensure horizontal and vertical centering.
       - Example for highlighted text: <span class="inline-flex items-center justify-center bg-red-500 text-white px-2 py-1 rounded">Important Text</span>
+      - Portrait Layout: Fixed 600x800, no overflow, no scrolling.
+    `;
+    
+    // 检查文本中是否包含风格信息
+    console.log('Checking for style information in text:', text.includes('Style: '));
+    if (text.includes('Style: ')) {
+      console.log('Text contains style information');
+      const styleMatch = text.match(/Style: ([\w-]+)/);
+      console.log('Style match result:', styleMatch);
+      if (styleMatch && styleMatch[1]) {
+        const styleId = styleMatch[1];
+        console.log('Extracted style ID:', styleId);
+        
+        // 根据风格ID生成相应的样式指南
+        if (styleId === 'classic-newspaper') {
+          console.log('Using classic-newspaper style guide');
+          styleGuide += `
+        Specific Style: 90s Classic Health Newspaper.
+        - Colors: Background #F4F1EA, Accent #B22222 (Deep Red).
+        - Large Fonts: Primary text must be at least 20px, headings 40px+.
+        - Clear Hierarchy: Use bold lines and solid color blocks to separate sections
+        - Layout: 2-column text body, bold double-line borders for header.
+        - Typography: Use bold serif fonts for titles.
+      `;
+        } else if (styleId === 'health-warning') {
+          console.log('Using health-warning style guide');
+          styleGuide += `
+        Specific Style: High-Impact Warning Special.
+        - Colors: Bright yellow background (#FFD700), heavy black borders.
+        - Large Fonts: Primary text must be at least 20px, headings 40px+.
+        - Clear Hierarchy: Use bold lines and solid color blocks to separate sections
+        - Elements: Large red caution boxes, heavy blocky text.
+      `;
+        } else if (styleId === 'magazine-cover') {
+          console.log('Using magazine-cover style guide');
+          styleGuide = `
+            Style Guide:
+            - 模仿老牌《大众健康》杂志封面的科普设计
+            - 背景：纯白背景，具有干净的纸张质感
+            - 布局：左侧是文字区，右侧是一个巨大的、具象的写实插画
+            - 标题（第一级）：左上角是大字号、深蓝色的艺术字体标题，下方是黑色的、醒目的标题文字
+            - 副标题（第二级）：标题下方，用醒目的深绿色加粗文字
+            - 配图：右侧是一个写实的、具象的人体心脏和血管示意图，清晰展示心脏与循环系统的连接。旁边带有一个放大镜图标，聚焦在一个呈明显紫色的嘴唇特写上，并有箭头指向心脏
+            - 正文（第三级）：在配图下方或左侧文字区，用清晰的宋体排列原正文，关键数字和短语用粗体标出
+            - 底部栏：底部是干净的版权和日期
+            - 界面适配：所有内容必须适配在600*800的界面中，不能超出界面范围，不支持滚动
+            - 布局调整：根据600*800的尺寸合理调整字体大小、间距和布局，确保所有内容都能在一个屏幕内完整显示
+          `;
+        } else {
+          console.log('Unknown style ID:', styleId);
+        }
+      } else {
+        console.log('No style ID found in text');
+      }
+    } else {
+      console.log('Text does not contain style information');
+    }
+    
+    console.log('Final style guide:', styleGuide);
+    
+     const prompt = `
+      Analyze the text: "${text}".
+      Generate 3-5 slides. 
+
+      STRICT OUTPUT FORMAT:
+      You MUST return a JSON object with this EXACT structure:
+      {
+        "slides": [
+          {
+            "title": "Slide Title",
+            "html": "<div class='...'>Slide Content</div>",
+            "css": ""
+          }
+        ]
+      }
+
+      CRITICAL RULES:
+      1. The "html" field MUST be a string containing the full Tailwind HTML.
+      2. DO NOT return a simple string array. Each slide MUST be an object.
+      3. Use single quotes (') for all HTML attributes (e.g., class='...') to avoid double-quote escape issues.
+      4. Ensure all content fits in 600x800.
+      
+      ${styleGuide}
     `;
 
     const parts: any[] = [{ text: prompt }];

@@ -13,8 +13,8 @@ interface ConfigModalProps {
 
 const ConfigModal: React.FC<ConfigModalProps> = ({ config, setConfig, onClose, user, onSaveApiKey }) => {
   const [localConfig, setLocalConfig] = useState<AppConfig>({ ...config });
-  const [useCustomText, setUseCustomText] = useState(!['gemini-3-flash-preview', 'gemini-3-pro-preview', 'deepseek-chat', 'deepseek-coder'].includes(config.textModel));
-  const [useCustomImage, setUseCustomImage] = useState(!['gemini-2.5-flash-image', 'gemini-3-pro-image-preview'].includes(config.imageModel));
+  const [useCustomText, setUseCustomText] = useState(!['gemini-3-flash-preview', 'gemini-3-pro-preview', 'deepseek-chat', 'deepseek-coder', 'minimax-M2.7'].includes(config.textModel));
+  const [useCustomImage, setUseCustomImage] = useState(!['gemini-2.5-flash-image', 'gemini-3-pro-image-preview', 'minimax-image-01'].includes(config.imageModel));
 
   const handleSave = async () => {
     setConfig(localConfig);
@@ -141,6 +141,7 @@ const ConfigModal: React.FC<ConfigModalProps> = ({ config, setConfig, onClose, u
                   <option value="gemini-3-pro-preview">Gemini 3 Pro (强)</option>
                   <option value="deepseek-chat">DeepSeek Chat</option>
                   <option value="deepseek-coder">DeepSeek Coder</option>
+                  <option value="minimax-M2.7">Minimax M2.7</option>
                 </select>
               )}
             </div>
@@ -172,6 +173,7 @@ const ConfigModal: React.FC<ConfigModalProps> = ({ config, setConfig, onClose, u
                 >
                   <option value="gemini-2.5-flash-image">Gemini 2.5 Flash Image</option>
                   <option value="gemini-3-pro-image-preview">Gemini 3 Pro Image (需Key)</option>
+                  <option value="minimax-image-01">Minimax Image (需Key)</option>
                 </select>
               )}
             </div>

@@ -15,8 +15,10 @@ interface LoginModalProps {
 const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [name, setName] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isRegister, setIsRegister] = useState(false);
 
   if (!isOpen) return null;
 
@@ -26,7 +28,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin }) => 
     setIsLoading(true);
 
     try {
-      const url = '/api/auth/login';
+      const url = isRegister ? '/api/auth/register' : '/api/auth/login';
 
       const response = await fetch(url, {
         method: 'POST',
@@ -36,13 +38,14 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin }) => 
         body: JSON.stringify({
           email,
           password: hashPassword(password),
+          ...(isRegister && { name }),
         }),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || 'Authentication failed');
+        throw new Error(data.message || (isRegister ? 'Registration failed' : 'Authentication failed'));
       }
 
       onLogin(data.user, data.token);
@@ -59,7 +62,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin }) => 
       <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-bold text-gray-800">
-            登录
+            {isRegister ? '注册' : '登录'}
           </h2>
           <button
             onClick={onClose}
@@ -76,6 +79,22 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin }) => 
         )}
 
         <form onSubmit={handleSubmit}>
+          {isRegister && (
+            <div className="mb-4">
+              <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+                姓名
+              </label>
+              <input
+                type="text"
+                id="name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#ff2442] focus:border-transparent"
+                placeholder="请输入姓名"
+              />
+            </div>
+          )}
+
           <div className="mb-4">
             <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
               邮箱
@@ -112,8 +131,18 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLogin }) => 
             disabled={isLoading}
             className="w-full bg-[#ff2442] text-white font-bold py-3 px-4 rounded-lg hover:bg-[#ff0022] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isLoading ? '处理中...' : '登录'}
+            {isLoading ? '处理中...' : isRegister ? '注册' : '登录'}
           </button>
+
+          <div className="mt-4 text-center">
+            <button
+              type="button"
+              onClick={() => setIsRegister(!isRegister)}
+              className="text-[#ff2442] font-medium hover:underline"
+            >
+              {isRegister ? '已有账号？去登录' : '没有账号？去注册'}
+            </button>
+          </div>
         </form>
       </div>
     </div>
